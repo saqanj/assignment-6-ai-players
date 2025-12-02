@@ -39,37 +39,11 @@ public class LLMPlayer implements Player {
                                    List<Character> allies,
                                    List<Character> enemies,
                                    GameState gameState) {
-        // TODO 1: Build the prompt (10 points)
-        // Create a detailed prompt that gives the LLM:
-        // - Character information (name, type, HP, mana, stats)
-        // - Allies status
-        // - Enemies status
-        // - Available actions
-        // - Strategic context
-        //
-        // Hint: Use String templates or StringBuilder
-        // Good prompts should be clear, structured, and include examples
         String prompt = buildPrompt(self, allies, enemies, gameState);
-
-        // TODO 2: Call the LLM and parse response (15 points)
-        // Use the ChatClient to get a Decision object from the LLM
-        // Spring AI will automatically deserialize the JSON response into the Decision record
-        //
-        // Example:
-        //   Decision decision = chatClient.prompt()
-        //       .user(prompt)
-        //       .call()
-        //       .entity(Decision.class);
-        //
-        // Handle errors gracefully (fallback to default action if parsing fails)
-        //
-        // Expected JSON format from LLM:
-        // {
-        //   "action": "attack" | "heal",
-        //   "target": "character_name",
-        //   "reasoning": "why this decision was made"
-        // }
-        throw new UnsupportedOperationException("TODO 2: Implement LLM call and parse response");
+        Decision decision = chatClient.prompt()
+                .user(prompt)
+                .call()
+                .entity(Decision.class);
 
         // TODO 3: Convert Decision to GameCommand (10 points)
         // Based on the decision.action(), create the appropriate GameCommand:
@@ -81,7 +55,6 @@ public class LLMPlayer implements Player {
     }
 
     /**
-     * TODO 1: Implement this method to build an effective prompt.
      *
      * A good prompt should include:
      * 1. Role definition: "You are a [character type] in a tactical RPG..."
@@ -132,13 +105,110 @@ public class LLMPlayer implements Player {
      * @return prompt string for the LLM
      */
     private String buildPrompt(Character self,
-                              List<Character> allies,
-                              List<Character> enemies,
-                              GameState gameState) {
-        // TODO 1: Implement prompt building
-        // See method documentation above for structure
-        throw new UnsupportedOperationException("TODO 1: Build prompt for LLM");
+                               List<Character> allies,
+                               List<Character> enemies,
+                               GameState gameState) {
+
+        StringBuilder sb = new StringBuilder();
+        int selfHp = self.getStats().health();
+        int selfMaxHp = self.getStats().maxHealth();
+        double selfHpPercent = (double) selfHp / selfMaxHp * 100.0;
+
+        int selfMana = self.getStats().mana();
+        int selfMaxMana = self.getStats().maxMana();
+
+        int atk = self.getStats().attackPower();
+        int def = self.getStats().defense();
+        String attackStrategyName = self.getAttackStrategy() != null
+                ? self.getAttackStrategy().getClass().getSimpleName()
+                : "UnknownAttackStrategy";
+        String defenseStrategyName = self.getDefenseStrategy() != null
+                ? self.getDefenseStrategy().getClass().getSimpleName()
+                : "UnknownDefenseStrategy";
+        sb.append("You are ")
+                .append(self.getName())
+                .append(", a ")
+                .append(self.getType())
+                .append(" in tactical turn-based RPG combat.")
+                .append("\n\n");
+        sb.append("YOUR STATUS:\n");
+        sb.append(String.format("- HP: %d/%d (%.0f%%)%n", selfHp, selfMaxHp, selfHpPercent));
+        sb.append(String.format("- Mana: %d/%d%n", selfMana, selfMaxMana));
+        sb.append(String.format("- Attack Power: %d, Defense: %d%n", atk, def));
+        sb.append(String.format("- Strategies: %s, %s%n", attackStrategyName, defenseStrategyName));
+        sb.append("\n");
+        sb.append("YOUR TEAM (allies):\n");
+        if (allies == null || allies.isEmpty()) {
+            sb.append("  - (no allies)\n");
+        } else {
+            sb.append(formatCharacterList(allies));
+        }
+        sb.append("\n");
+        sb.append("ENEMIES:\n");
+        if (enemies == null || enemies.isEmpty()) {
+            sb.append("  - (no enemies)\n");
+        } else {
+            sb.append(formatCharacterList(enemies));
+        }
+        sb.append("\n");
+        sb.append("AVAILABLE ACTIONS:\n");
+        if (enemies != null && !enemies.isEmpty()) {
+            for (Character enemy : enemies) {
+                int estimatedDamage = estimateDamage(self, enemy);
+                sb.append(String.format(
+                        "  - attack \"%s\" - Estimated damage: ~%d%n",
+                        enemy.getName(),
+                        estimatedDamage
+                ));
+            }
+        } else {
+            sb.append("  - (no valid attack targets)\n");
+        }
+
+        if (allies != null && !allies.isEmpty()) {
+            for (Character ally : allies) {
+                sb.append(String.format(
+                        "  - heal \"%s\" - Restores ~30 HP%n",
+                        ally.getName()
+                ));
+            }
+        } else {
+            sb.append("  - heal <ally_name> - (no allies available to heal)\n");
+        }
+        sb.append("\n");
+        sb.append("TACTICAL GUIDANCE:\n");
+        sb.append("- Focus fire: Attack wounded enemies to eliminate threats quickly.\n");
+        sb.append("- Protect allies: Prefer healing teammates below 30% HP.\n");
+        sb.append("- Consider your role: ")
+                .append(getRoleAdvice(self))
+                .append("\n\n");
+        sb.append("Respond ONLY with JSON in the following format (no extra text):\n");
+        sb.append("{\n");
+        sb.append("  \"action\": \"attack\" | \"heal\",\n");
+        sb.append("  \"target\": \"character_name\",\n");
+        sb.append("  \"reasoning\": \"brief tactical explanation\"\n");
+        sb.append("}\n");
+
+        return sb.toString();
     }
+
+    /**
+     * Simple helper to give type-specific strategic advice.
+     */
+    private String getRoleAdvice(Character self) {
+        String type = self.getType().toString().toLowerCase();
+
+        if (type.contains("mage") || type.contains("wizard")) {
+            return "Use your high damage output to finish off low-HP enemies, but avoid wasting turns on very tanky foes.";
+        } else if (type.contains("healer") || type.contains("cleric") || type.contains("support")) {
+            return "Prioritize healing critically wounded allies; only attack when your team is relatively safe.";
+        } else if (type.contains("tank") || type.contains("warrior") || type.contains("knight")) {
+            return "Focus on dangerous enemies that threaten your fragile allies and keep your HP high.";
+        } else {
+            return "Balance attacking vulnerable enemies with healing low-HP allies depending on who is in more danger.";
+        }
+    }
+
 
     /**
      * Formats a list of characters for display in the prompt.
