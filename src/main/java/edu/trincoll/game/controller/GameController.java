@@ -47,6 +47,7 @@ public class GameController {
      * Runs the main game loop until one team is defeated.
      * <p>
      * TODO 4: Implement game loop (15 points)
+     * // DONE - Kayla
      * <p>
      * The game loop should:
      * <p>
@@ -68,7 +69,25 @@ public class GameController {
      * Hint: Use processTurn() helper method for each character
      */
     public void playGame() {
-        throw new UnsupportedOperationException("TODO 4: Implement game loop");
+        while (!isGameOver()) {
+            System.out.println("\n" + "=".repeat(60));
+            System.out.println("ROUND " + gameState.roundNumber());
+            System.out.println("=".repeat(60));
+
+            for (Character character : team1) {
+                if (isGameOver()) break;
+                processTurn(character, team1, team2);
+            }
+
+            if (isGameOver()) break;
+
+            for (Character character : team2) {
+                if (isGameOver()) break;
+                processTurn(character, team2, team1);
+            }
+
+            gameState = gameState.nextRound();
+        }
     }
 
     /**

@@ -79,6 +79,7 @@ public class GameApplication {
                 """);
 
             // TODO 6: Implement team configuration (15 points)
+            // DONE - Kayla
             // <p>
             // Create two teams with a mix of player types:
             // <p>
@@ -100,7 +101,9 @@ public class GameApplication {
             // <p>
             // Hint: Use the helper method createTeamConfiguration() below
 
-            throw new UnsupportedOperationException("TODO 6: Configure teams and start game");
+            GameController controller = createTeamConfiguration(openAiClient, anthropicClient, geminiClient);
+            controller.playGame();
+            controller.displayResult();
         };
     }
 
@@ -138,7 +141,23 @@ public class GameApplication {
             ChatClient anthropicClient,
             ChatClient geminiClient) {
         // TODO 6: Implement team configuration
-        throw new UnsupportedOperationException("TODO 6: Implement team configuration");
+        Character humanWarrior = CharacterFactory.createWarrior("Conan");
+        Character aiMage = CharacterFactory.createMage("Gandalf");
+        List<Character> team1 = List.of(humanWarrior, aiMage);
+
+        Character gptArcher = CharacterFactory.createArcher("Legolas");
+        Character claudeRogue = CharacterFactory.createRogue("Assassin");
+        Character geminiWarrior = CharacterFactory.createWarrior("Tank");
+        List<Character> team2 = List.of(gptArcher, claudeRogue, geminiWarrior);
+
+        Map<Character, Player> playerMap = new HashMap<>();
+        playerMap.put(humanWarrior, new HumanPlayer());
+        playerMap.put(aiMage, new RuleBasedPlayer());
+        playerMap.put(gptArcher, new LLMPlayer(openAiClient, "GPT-5"));
+        playerMap.put(claudeRogue, new LLMPlayer(anthropicClient, "Claude-Sonnet-4.5"));
+        playerMap.put(geminiWarrior, new LLMPlayer(geminiClient, "Gemini-2.5-Pro"));
+
+        return new GameController(team1, team2, playerMap);
     }
 
     /**

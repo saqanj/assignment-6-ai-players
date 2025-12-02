@@ -7,6 +7,7 @@ import edu.trincoll.game.command.HealCommand;
 import edu.trincoll.game.model.Character;
 import org.springframework.ai.chat.client.ChatClient;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -52,6 +53,10 @@ public class LLMPlayer implements Player {
         //
         // Use findCharacterByName() to locate the target character
         // Hint: Use a switch expression or if-else to handle different actions
+        if (decision == null || decision.action() == null || decision.target() == null) {
+            System.out.println("[" + modelName + "] Invalid decision from LLM. Using fallback action.");
+            return defaultAction(self, enemies);
+        }
     }
 
     /**
