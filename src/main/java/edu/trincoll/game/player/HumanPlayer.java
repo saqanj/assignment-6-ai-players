@@ -47,7 +47,7 @@ public class HumanPlayer implements Player {
 
                 return switch (choice) {
                     case 1 -> chooseAttackTarget(self, enemies);
-                    case 2 -> chooseHealTarget(allies);
+                    case 2 -> chooseHealTarget(self, allies);
                     default -> {
                         System.out.println("Invalid choice. Please try again.");
                         yield null;
@@ -67,10 +67,10 @@ public class HumanPlayer implements Player {
         return null;
     }
 
-    private GameCommand chooseHealTarget(List<Character> allies) {
+    private GameCommand chooseHealTarget(Character self, List<Character> allies) {
         Character target = chooseCharacter("heal", allies);
         if (target != null) {
-            return new HealCommand(target, 30);
+            return new HealCommand(self, target, 30);
         }
         return null;
     }

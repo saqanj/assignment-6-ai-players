@@ -67,7 +67,7 @@ public class LLMPlayerSolution implements Player {
             // Create and return the appropriate command
             return switch (decision.action().toLowerCase()) {
                 case "attack" -> new AttackCommand(self, target);
-                case "heal" -> new HealCommand(target, 30);
+                case "heal" -> new HealCommand(self, target, 30);
                 default -> {
                     System.out.println("[" + modelName + "] Unknown action: " + decision.action());
                     yield defaultAction(self, enemies);

@@ -21,11 +21,13 @@ import edu.trincoll.game.model.Character;
  * Note: Need to track actual healing because you can't heal above max health.
  */
 public class HealCommand implements GameCommand {
+    private final Character healer;
     private final Character target;
     private final int amount;
     private int actualHealingDone;
 
-    public HealCommand(Character target, int amount) {
+    public HealCommand(Character healer, Character target, int amount) {
+        this.healer = healer;
         this.target = target;
         this.amount = amount;
     }
@@ -56,4 +58,17 @@ public class HealCommand implements GameCommand {
     public String getDescription() {
         return String.format("Heal %s for %d HP", target.getName(), amount);
     }
+
+    public Character getHealer() {
+        return healer;
+    }
+
+    public Character getTarget() {
+        return target;
+    }
+
+    public int getAmount() {
+        return amount;
+    }
 }
+

@@ -38,7 +38,7 @@ public class RuleBasedPlayer implements Player {
         // Rule 1: Self-preservation
         double healthPercent = (double) self.getStats().health() / self.getStats().maxHealth();
         if (healthPercent < SELF_HEAL_THRESHOLD) {
-            return new HealCommand(self, 30);
+            return new HealCommand(self, self, 30);
         }
 
         // Rule 2: Help weakest ally if critical
@@ -52,7 +52,7 @@ public class RuleBasedPlayer implements Player {
             .orElse(null);
 
         if (weakestAlly != null) {
-            return new HealCommand(weakestAlly, 30);
+            return new HealCommand(self, weakestAlly, 30);
         }
 
         // Rule 3: Attack weakest enemy (focus fire)

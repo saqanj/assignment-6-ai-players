@@ -1,7 +1,9 @@
 package edu.trincoll.game.controller;
 
+import edu.trincoll.game.command.AttackCommand;
 import edu.trincoll.game.command.CommandInvoker;
 import edu.trincoll.game.command.GameCommand;
+import edu.trincoll.game.command.HealCommand;
 import edu.trincoll.game.model.Character;
 import edu.trincoll.game.player.GameState;
 import edu.trincoll.game.player.Player;
@@ -108,6 +110,7 @@ public class GameController {
      * @param allies the character's team
      * @param enemies the opposing team
      */
+
     private void processTurn(Character character,
                             List<Character> allies,
                             List<Character> enemies) {
@@ -116,9 +119,59 @@ public class GameController {
             return;
         }
 
-        // TODO 5: Get player and execute their decision
-        throw new UnsupportedOperationException("TODO 5: Process character turn");
+       System.out.println("\n" + character.getName() + "'s turn");
+
+        Player player = playerMap.get(character);
+        if (player == null) {
+            throw  new IllegalStateException("No player found for character: " + character.getName());
+        }
+
+        GameCommand command = player.decideAction(character, allies, enemies, gameState);
+
+        invoker.executeCommand(command);
+        displayActionResult(command);
+        gameState = gameState.nextTurn().withUndo(true, invoker.getCommandHistory().size());
     }
+
+    /**
+     * Displays the result of a single executed command.
+     *
+     * @param command the command that was executed
+     */
+    private void displayActionResult(GameCommand command) {
+        if (command == null) return;
+
+        // AttackCommand
+        if (command instanceof AttackCommand attack) {
+            String attackerName = attack.getAttacker().getName();
+            String targetName = attack.getTarget().getName();
+            int damage = attack.getDamage(); // you should have a getter in AttackCommand
+            int targetHp = Math.max(0, attack.getTarget().getStats().health());
+
+            System.out.printf("→ %s attacks %s for %d damage!%n", attackerName, targetName, damage);
+            System.out.printf("  %s: %d HP%n", targetName, targetHp);
+
+            if (targetHp == 0) {
+                System.out.printf("  %s has been defeated!%n", targetName);
+            }
+        }
+        // HealCommand
+        else if (command instanceof HealCommand heal) {
+            String healerName = heal.getHealer().getName(); // the character performing the heal
+            String targetName = heal.getTarget().getName();
+            int amount = heal.getAmount(); // amount healed
+            int targetHp = heal.getTarget().getStats().health();
+
+            System.out.printf("→ %s heals %s for %d HP!%n", healerName, targetName, amount);
+            System.out.printf("  %s: %d HP%n", targetName, targetHp);
+        }
+        // Unknown command
+        else {
+            System.out.println("→ Unknown command executed.");
+        }
+    }
+
+
 
     /**
      * Checks if the game is over.

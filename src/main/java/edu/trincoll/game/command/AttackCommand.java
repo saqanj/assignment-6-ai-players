@@ -54,4 +54,17 @@ public class AttackCommand implements GameCommand {
     public String getDescription() {
         return String.format("%s attacks %s", attacker.getName(), target.getName());
     }
+
+    public Character getAttacker() {
+        return attacker;
+    }
+
+    public Character getTarget() {
+        return target;
+    }
+
+    // Renamed to getDamage for clarity in GameController logging
+    public int getDamage() {
+        return actualHealthLost;
+    }
 }

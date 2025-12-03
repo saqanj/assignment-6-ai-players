@@ -37,9 +37,9 @@ public class LLMPlayer implements Player {
 
     @Override
     public GameCommand decideAction(Character self,
-                                   List<Character> allies,
-                                   List<Character> enemies,
-                                   GameState gameState) {
+                                    List<Character> allies,
+                                    List<Character> enemies,
+                                    GameState gameState) {
         String prompt = buildPrompt(self, allies, enemies, gameState);
         Decision decision = chatClient.prompt()
                 .user(prompt)
@@ -47,6 +47,7 @@ public class LLMPlayer implements Player {
                 .entity(Decision.class);
 
         // TODO 3: Convert Decision to GameCommand (10 points)
+        // DONE - AJ
         // Based on the decision.action(), create the appropriate GameCommand:
         // - "attack" -> new AttackCommand(self, target)
         // - "heal" -> new HealCommand(self, target)
@@ -55,10 +56,42 @@ public class LLMPlayer implements Player {
         // Hint: Use a switch expression or if-else to handle different actions
         if (decision == null || decision.action() == null || decision.target() == null) {
             System.out.println("[" + modelName + "] Invalid decision from LLM. Using fallback action.");
-            return defaultAction(self, enemies);
+            return defaultAction(self, enemies, allies);
         }
+
+        Character targetCharacter = switch (decision.action().toLowerCase()) {
+            case "attack" -> findCharacterByName(decision.target(), enemies);
+            case "heal" -> findCharacterByName(decision.target(), allies);
+            default -> null;
+        };
+
+        if (targetCharacter == null) {
+            System.out.println("[" + modelName + "] Invalid decision from LLM. Using default.");
+            return defaultAction(self, enemies, allies);
+        }
+
+        return switch (decision.action().toLowerCase()) {
+            case "attack" -> new AttackCommand(self, targetCharacter);
+            case "heal" -> new HealCommand(self,targetCharacter, 30);
+            default -> defaultAction(self, enemies, allies);
+        };
     }
 
+    private GameCommand defaultAction(Character self, List<Character> enemies, List<Character> allies) {
+        Character allyToHeal = allies.stream()
+                .filter(c -> c.getStats().health() < c.getStats().maxHealth() * 0.3).findFirst().orElse(null);
+        if (allyToHeal == null) {
+            System.out.println("[" + modelName + "] Default action: healing " + allyToHeal.getName());
+            return new HealCommand(self, allyToHeal, 30);
+        }
+
+        Character weakestEnemy = enemies.stream()
+                .filter(c -> c.getStats().health() > 0)
+                .min(Comparator.comparingInt(c -> c.getStats().health()))
+                .orElse(enemies.get(0));
+        System.out.println("[" + modelName + "] Default action: attacking " + weakestEnemy.getName());
+        return new AttackCommand(self, weakestEnemy);
+    }
     /**
      *
      * A good prompt should include:

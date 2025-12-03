@@ -124,7 +124,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should execute heal and increase target health")
         void shouldExecuteHeal() {
-            HealCommand command = new HealCommand(wounded, 30);
+            HealCommand command = new HealCommand(healer, wounded, 30);
             int initialHealth = wounded.getStats().health();
 
             command.execute();
@@ -135,7 +135,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should heal by specified amount")
         void shouldHealBySpecifiedAmount() {
-            HealCommand command = new HealCommand(wounded, 30);
+            HealCommand command = new HealCommand(healer, wounded, 30);
 
             command.execute();
 
@@ -146,7 +146,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should not heal beyond max health")
         void shouldNotHealBeyondMaxHealth() {
-            HealCommand command = new HealCommand(wounded, 200);
+            HealCommand command = new HealCommand(healer, wounded, 200);
 
             command.execute();
 
@@ -211,7 +211,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should work with self-heal")
         void shouldWorkWithSelfHeal() {
-            HealCommand command = new HealCommand(healer, 20);
+            HealCommand command = new HealCommand(healer, healer, 20);
             healer.setHealth(50);
 
             command.execute();
@@ -265,7 +265,7 @@ class CommandPatternTest {
             target.setHealth(50);
 
             // Execute three commands: heal, attack, heal
-            GameCommand heal1 = new HealCommand(target, 20);
+            GameCommand heal1 = new HealCommand(healer, target, 20);
             GameCommand attack = new AttackCommand(attacker, target);
             GameCommand heal2 = new HealCommand(target, 10);
 
