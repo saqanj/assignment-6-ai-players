@@ -156,7 +156,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should undo heal by restoring previous health")
         void shouldUndoHeal() {
-            HealCommand command = new HealCommand(wounded, 30);
+            HealCommand command = new HealCommand(healer, wounded, 30);
             int initialHealth = wounded.getStats().health();
 
             command.execute();
@@ -169,7 +169,7 @@ class CommandPatternTest {
         @DisplayName("Should correctly undo when heal was capped at max health")
         void shouldUndoWhenHealWasCapped() {
             // Wounded at 50/150 HP
-            HealCommand command = new HealCommand(wounded, 200);
+            HealCommand command = new HealCommand(healer, wounded, 200);
             int initialHealth = wounded.getStats().health(); // 50
 
             command.execute();
@@ -184,7 +184,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should handle multiple execute and undo cycles")
         void shouldHandleMultipleExecuteUndoCycles() {
-            HealCommand command = new HealCommand(wounded, 30);
+            HealCommand command = new HealCommand(healer, wounded, 30);
             int initialHealth = wounded.getStats().health();
 
             command.execute();
@@ -198,7 +198,7 @@ class CommandPatternTest {
         @Test
         @DisplayName("Should have meaningful description")
         void shouldHaveMeaningfulDescription() {
-            HealCommand command = new HealCommand(wounded, 30);
+            HealCommand command = new HealCommand(healer, wounded, 30);
 
             String description = command.getDescription();
 
@@ -267,7 +267,7 @@ class CommandPatternTest {
             // Execute three commands: heal, attack, heal
             GameCommand heal1 = new HealCommand(healer, target, 20);
             GameCommand attack = new AttackCommand(attacker, target);
-            GameCommand heal2 = new HealCommand(target, 10);
+            GameCommand heal2 = new HealCommand(healer, target, 10);
 
             invoker.executeCommand(heal1); // 50 -> 70
             invoker.executeCommand(attack); // 70 -> less
@@ -315,7 +315,7 @@ class CommandPatternTest {
         void shouldMaintainCommandHistory() {
             target.setHealth(60);  // Mage max health is 80
 
-            GameCommand heal = new HealCommand(target, 20);
+            GameCommand heal = new HealCommand(target, target, 20);
             GameCommand attack = new AttackCommand(attacker, target);
 
             invoker.executeCommand(heal);  // 60 + 20 = 80
@@ -345,7 +345,7 @@ class CommandPatternTest {
             // Execute a series of commands
             invoker.executeCommand(new AttackCommand(warrior, mage));
             invoker.executeCommand(new AttackCommand(mage, warrior));
-            invoker.executeCommand(new HealCommand(warrior, 30));
+            invoker.executeCommand(new HealCommand(warrior, warrior, 30));
 
             // Both characters should have changed health
             assertThat(warrior.getStats().health()).isNotEqualTo(warriorInitialHealth);
@@ -368,7 +368,7 @@ class CommandPatternTest {
             Character mage = CharacterFactory.createMage("Enemy");
 
             GameCommand attack = new AttackCommand(warrior, mage);
-            GameCommand heal = new HealCommand(warrior, 20);
+            GameCommand heal = new HealCommand(warrior, warrior, 20);
 
             assertThat(attack.getDescription()).isNotEmpty();
             assertThat(heal.getDescription()).isNotEmpty();
